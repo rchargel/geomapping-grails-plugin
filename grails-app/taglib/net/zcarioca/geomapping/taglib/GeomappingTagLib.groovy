@@ -57,7 +57,7 @@ class GeomappingTagLib {
          startLat = attrs.remove('latitude')
          startLng = attrs.remove('longitude')
       } else {
-         LatLng pos = geomappingService.getLocationOfIP(request.remoteAddr)
+         LatLng pos = geomappingService.getCoordinatesFromIP(request.remoteAddr)
          if (pos) {
             startLat = pos.latitude
             startLng = pos.longitude

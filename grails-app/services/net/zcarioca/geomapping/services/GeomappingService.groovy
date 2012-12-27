@@ -168,7 +168,7 @@ class GeomappingService {
     * @param ipAddress The IP address to locate.
     * @return Returns the {@link LatLng} for the provided IP address.
     */
-   LatLng getLocationOfIP(String ipAddress) {
+   LatLng getCoordinatesFromIP(String ipAddress) {
       URL url = new URL(grailsApplication?.config?.geomapping?.iptrace?.url ?: "http://www.geoplugin.net/xml.gp?ip=${ipAddress}")
       InputStream inputStream = url.openStream()
       
