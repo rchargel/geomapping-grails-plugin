@@ -3,6 +3,7 @@ package net.zcarioca.geomapping.services
 import static org.junit.Assert.*
 import grails.test.mixin.TestFor;
 
+import net.zcarioca.geomapper.BoundingBox;
 import net.zcarioca.geomapper.LatLng;
 
 import org.junit.*
@@ -11,24 +12,6 @@ import org.junit.*
 class GeomappingServiceIntegrationTests {
 
    GeomappingService geomappingService
-
-   @Test
-   void testCalculateDistance() {
-      LatLng newYork = new LatLng(40.714353, -74.005974)
-      LatLng losAngeles = new LatLng(34.052236, -118.243673)
-      LatLng london = new LatLng(51.507335, -0.127683)
-      LatLng johannesburg = new LatLng(-26.204074, 28.047292)
-      LatLng midtown = new LatLng(40.760439, -73.979336)
-      
-      assertEquals(3936, geomappingService.calculateDistance(newYork, losAngeles), 0.5)
-      assertEquals(3936, geomappingService.calculateDistance(losAngeles, newYork), 0.5)
-      assertEquals(5570, geomappingService.calculateDistance(newYork, london), 0.5)
-      assertEquals(5570, geomappingService.calculateDistance(london, newYork), 0.5)
-      assertEquals(12840, geomappingService.calculateDistance(johannesburg, newYork), 0.5)
-      assertEquals(12840, geomappingService.calculateDistance(newYork, johannesburg), 0.5)
-      assertEquals(5.6, geomappingService.calculateDistance(newYork, midtown), 0.1)
-      assertEquals(5.6, geomappingService.calculateDistance(midtown, newYork), 0.1)
-   }
 
    @Test
    void testGetLocationsFromCoordinates() {

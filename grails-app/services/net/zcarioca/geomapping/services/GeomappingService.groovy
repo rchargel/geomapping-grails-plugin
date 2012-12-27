@@ -43,8 +43,8 @@ class GeomappingService {
     * @return Returns a map containing north, south, east, and west coordinates. 
     */
    BoundingBox buildBoundaryBox(double latitude, double longitude, double radiusInKilometers) {
-      double latDelta = (radiusInKilometers + 0.1) / AVERAGE_KILOMETERS_IN_DEGREE
-      double lngDelta = (radiusInKilometers + 0.1) / (KILOMETERS_IN_LONGITUDE_AT_EQUATOR * Math.cos(Math.toRadians(latitude)))
+      double latDelta = (radiusInKilometers + 0.01) / AVERAGE_KILOMETERS_IN_DEGREE
+      double lngDelta = (radiusInKilometers + 0.01) / (KILOMETERS_IN_LONGITUDE_AT_EQUATOR * Math.cos(Math.toRadians(latitude)))
 
       return new BoundingBox(new LatLng(latitude + latDelta, longitude - lngDelta),
       new LatLng(latitude - latDelta, longitude + lngDelta))
