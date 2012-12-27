@@ -1,5 +1,7 @@
 package net.zcarioca.geomapping.services
 
+import javax.servlet.http.HttpServletRequest;
+
 import groovy.util.slurpersupport.GPathResult
 import net.zcarioca.geomapper.BoundingBox
 import net.zcarioca.geomapper.LatLng
@@ -159,6 +161,28 @@ class GeomappingService {
             
       GeocodeResponse geocodeResponse = geocoder.geocode(geocoderRequest)
       return getLocationsFromResponse(geocodeResponse)
+   }
+   
+   /**
+    * Attempts to the find the location of an IP address.
+    * @param ipAddress The IP address to locate.
+    * @return Returns the {@link LatLng} for the provided IP address.
+    */
+   LatLng getLocationOfIP(String ipAddress) {
+      URL url = new URL(grailsApplication?.config?.geomapping?.iptrace?.url ?: "http://www.geoplugin.net/xml.gp?ip=${ipAddress}")
+      InputStream inputStream = url.openStream()
+      
+      GPathResult xml = new XmlSlurper().parse(inputStream)
+      
+      IOUtils.closeQuietly(inputStream)
+      
+      if (xml?.geoplugin_latitude?.toString()) {
+         double latitude = Double.parseDouble(xml.geoplugin_latitude.toString())
+         double longitude = Double.parseDouble(xml.geoplugin_longitude.toString())
+
+         return new LatLng(latitude, longitude)
+      }
+      return null
    }
 
    protected List<Location> getLocationsFromResponse(GeocodeResponse geocodeResponse) {

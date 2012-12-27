@@ -10,7 +10,6 @@ class GeomappingGrailsPlugin {
         "grails-app/views/error.gsp"
     ]
 
-    // TODO Fill in these fields
     def title = "Geomapping Plugin" // Headline display name of the plugin
     def author = "Rafael Chargel"
     def authorEmail = "rchargel@zcarioca.net"

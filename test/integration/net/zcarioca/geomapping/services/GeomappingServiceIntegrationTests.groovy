@@ -14,6 +14,16 @@ class GeomappingServiceIntegrationTests {
    GeomappingService geomappingService
 
    @Test
+   void testGetLocationForIP() {
+      LatLng ipPos = geomappingService.getLocationOfIP('74.125.128.102') // google
+      assertEquals(37.419201, ipPos.latitude, 0)
+      assertEquals(-122.057404, ipPos.longitude, 0)
+      ipPos = geomappingService.getLocationOfIP('157.166.255.18') // CNN
+      assertEquals(33.749001, ipPos.latitude, 0)
+      assertEquals(-84.388, ipPos.longitude, 0)
+   }
+   
+   @Test
    void testGetLocationsFromCoordinates() {
       def locations = geomappingService.getLocationsFromCoordinates(40.7482845, -73.9855692)
       assertEquals('5th Ave', locations[0].street)
