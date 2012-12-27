@@ -19,7 +19,7 @@ Adds mapping services to your grails project.
 '''
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/geomapping"
+    def documentation = "https://github.com/rchargel/geomapping-grails-plugin/blob/master/README.md"
 
     // Extra (optional) plugin metadata
 
