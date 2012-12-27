@@ -1,7 +1,14 @@
 Geomapping Plugin for Grails
 ============================
-* auto-gen TOC:
-{:toc}
+* [Description](#Description)
+* Configuration
+* Geomapping Service
+* * buildBoundingBox
+* * calculateDistance
+* * getCoordinatesFromIP
+* * getLocationsFromCoordinates
+* * getLocationsFromAddress
+* Tag Library
 
 ## Description
 The geomapping plugin for grails provides both a geomappingService and a tag library to your application to simplify the development of applications using google maps api.
