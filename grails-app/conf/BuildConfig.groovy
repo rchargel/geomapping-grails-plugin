@@ -26,11 +26,11 @@ grails.project.dependency.resolution = {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
 
         // runtime 'mysql:mysql-connector-java:5.1.5'
+        runtime 'com.google.code.geocoder-java:geocoder-java:0.11'
     }
 
     plugins {
-        build(":tomcat:$grailsVersion",
-              ":release:1.0.0") {
+        build(":tomcat:$grailsVersion", ":release:1.0.0") {
             export = false
         }
     }

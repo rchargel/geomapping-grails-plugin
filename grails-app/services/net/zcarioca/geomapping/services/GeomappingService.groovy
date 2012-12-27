@@ -1,18 +1,30 @@
 package net.zcarioca.geomapping.services
 
-import groovy.util.slurpersupport.GPathResult;
+import groovy.util.slurpersupport.GPathResult
+import net.zcarioca.geomapper.BoundingBox
+import net.zcarioca.geomapper.LatLng
+import net.zcarioca.geomapper.Location
 
 import org.apache.commons.io.IOUtils
+import org.springframework.context.i18n.LocaleContextHolder as LCH
+
+import com.google.code.geocoder.Geocoder
+import com.google.code.geocoder.GeocoderRequestBuilder
+import com.google.code.geocoder.model.GeocodeResponse
+import com.google.code.geocoder.model.GeocoderAddressComponent;
+import com.google.code.geocoder.model.GeocoderRequest
+import com.google.code.geocoder.model.GeocoderResult
 
 class GeomappingService {
    static transactional = false
 
    def grailsApplication
-   def encoding = "UTF-8"
-   def AVERAGE_MILES_IN_DEGREE = 69.054068
-   def MILES_IN_LONGITUDE_AT_EQUATOR = 69.1707056
-   def RADIUS_OF_EARTH_MILES = 3963.1676
-   def MILES_TO_KILOMETERS = 1.60934
+   public static final String encoding = "UTF-8"
+   public static final double MEAN_RADIUS_OF_EARTH_KILOMETERS = 6371.009
+
+   private static final double AVERAGE_KILOMETERS_IN_DEGREE = 111.132
+   private static final double KILOMETERS_IN_LONGITUDE_AT_EQUATOR = 111.3194600331
+   private static final double KILOMETERS_IN_ONE_MILE = 1.60934
 
 
    /**
@@ -30,12 +42,37 @@ class GeomappingService {
     * @param miles The number of miles to include
     * @return Returns a map containing north, south, east, and west coordinates. 
     */
-   def buildBoundaryBox(latitude, longitude, miles) {
-      def latDelta = (miles + 1) / AVERAGE_MILES_IN_DEGREE
-      def lngDelta = (miles + 1) / (MILES_IN_LONGITUDE_AT_EQUATOR * Math.cos(Math.toRadians(latitude)))
+   BoundingBox buildBoundaryBox(double latitude, double longitude, double radiusInKilometers) {
+      double latDelta = (radiusInKilometers + 0.1) / AVERAGE_KILOMETERS_IN_DEGREE
+      double lngDelta = (radiusInKilometers + 0.1) / (KILOMETERS_IN_LONGITUDE_AT_EQUATOR * Math.cos(Math.toRadians(latitude)))
 
-      return [ north: latitude + latDelta, south: latitude - latDelta,
-         east: longitude + lngDelta, west: longitude - lngDelta]
+      return new BoundingBox(new LatLng(latitude + latDelta, longitude - lngDelta),
+      new LatLng(latitude - latDelta, longitude + lngDelta))
+   }
+   
+   /**
+    * Calculates the great circle distance between two points.  This is the shortest distance that can be traversed over
+    * a spherical shape.
+    *
+    * Uses the Haversine formula
+    * a = sin²(Δlat/2) + cos(lat1).cos(lat2).sin²(Δlong/2)
+    * c = 2.atan2(√a, √(1−a))
+    * d = R.c
+    *
+    * where R = radius of the earth
+    * all angles are in radians
+    *
+    * Note: while this formula does use a lot of trig, the assumption is that it is
+    * unlikely that the user will be processing tens of thousands at a time.  That
+    * being said, even at 10,000 comparisons, this formula is still well within
+    * the acceptable sub-second timing.
+    *
+    * @param coordinate1 The first coordinate
+    * @param coordinate2 The second coordinate
+    * @return Returns the distance in kilometers
+    */
+   double calculateDistance(LatLng coordinate1, LatLng coordinate2) {
+      return calculateDistance(coordinate1.latitude, coordinate1.longitude, coordinate2.latitude, coordinate2.longitude)
    }
 
    /**
@@ -59,7 +96,7 @@ class GeomappingService {
     * @param longitude1 The first longitude
     * @param latitude2 The second latitude
     * @param longitude2 The second longitude
-    * @return Returns the distance in miles
+    * @return Returns the distance in kilometers
     */
    double calculateDistance(double latitude1, double longitude1, double latitude2, double longitude2){
       double dLat = Math.toRadians(latitude2 - latitude1)
@@ -69,7 +106,8 @@ class GeomappingService {
 
       double a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.sin(dLng/2) * Math.sin(dLng/2) * Math.cos(lat1) * Math.cos(lat2)
       double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-      return RADIUS_OF_EARTH_MILES * c
+      
+      return MEAN_RADIUS_OF_EARTH_KILOMETERS * c
    }
 
    /**
@@ -78,7 +116,16 @@ class GeomappingService {
     * @return Returns the distance in kilometers
     */
    double toKilometers(double miles) {
-      return miles * MILES_TO_KILOMETERS
+      return miles * KILOMETERS_IN_ONE_MILE
+   }
+
+   /**
+    * Converts kilometers to miles.
+    * @param kilometers The number of kilometers
+    * @return Returns the distance in miles.
+    */
+   double toMiles(double kilometers) {
+      return kilometers / KILOMETERS_IN_ONE_MILE
    }
 
    /**
@@ -86,167 +133,71 @@ class GeomappingService {
     * @param location The location string
     * @return Returns a list of sorted locations.
     */
-   def getLocationsFromAddress(location) {
-      def xml = getXmlFromStringAddress(location)
-      return getLocationsFromXml(xml)
+   List<Location> getLocationsFromAddress(String address) {
+      Geocoder geocoder = new Geocoder()
+      GeocoderRequest geocoderRequest = new GeocoderRequestBuilder()
+            .setAddress(address)
+            .setLanguage(LCH.locale.language)
+            .getGeocoderRequest()
+
+      GeocodeResponse geocodeResponse = geocoder.geocode(geocoderRequest)
+      return getLocationsFromResponse(geocodeResponse)
    }
-   
+
    /**
     * Gets a list of locations from a coordinate.
     * @param latitude The latitude
     * @param longitude The longitude
     * @return Returns a list of sorted locations.
     */
-   def getLocationsFromCoordinates(latitude, longitude) {
-      def xml = getXmlFromLatLng(latitude, longitude)
-      return getLocationsFromXml(xml)
+   List<Location> getLocationsFromCoordinates(double latitude, double longitude) {
+      Geocoder geocoder = new Geocoder()
+      GeocoderRequest geocoderRequest = new GeocoderRequestBuilder()
+            .setLocation(new com.google.code.geocoder.model.LatLng(latitude, longitude))
+            .setLanguage(LCH.locale.language)
+            .getGeocoderRequest()
+            
+      GeocodeResponse geocodeResponse = geocoder.geocode(geocoderRequest)
+      return getLocationsFromResponse(geocodeResponse)
    }
-   
-   /**
-    * Gets a list of locations from a given XML document.
-    * @param xml The xml document
-    * @return Returns a list of locations
-    */
-   protected def getLocationsFromXml(GPathResult xml) {
+
+   protected List<Location> getLocationsFromResponse(GeocodeResponse geocodeResponse) {
       def locations = []
 
-      for (int i in 0..xml.result.size()-1) {
-         def result = xml.result[i]
-
-         def addrMap = ['name':'']
-
-         for (int j in 0..result.address_component.size()-1) {
-            def addComp = result.address_component[j]
-
-            def type = getType(addComp)
-            if (type != 'name') {
-               addrMap[type] = addComp.short_name.toString()
-
-               if (type == 'administrative_area_level_1') {
-                  addrMap['state'] = addComp.short_name.toString()
-               }
-            } else {
-               addrMap[type] += ", ${addComp.short_name}"
-            }
+      geocodeResponse.results.each { result ->
+         if (result.geometry?.location) {
+            Location location = new Location()
+            location.formattedAddress = result.formattedAddress
+            location.location = new LatLng(result.geometry.location.lat, result.geometry.location.lng)
+            location.partialMatch = result.partialMatch
+            
+            def addrComps = breakDownAddress(result.addressComponents)
+            location.name = addrComps['point_of_interest'] ?: addrComps['establishment']
+            location.number = addrComps['street_number']
+            location.street = addrComps['route']
+            location.city = addrComps['postal_town'] ?:
+                            addrComps['administrative_area_level_2'] ?:
+                            addrComps['locality'] ?:
+                            addrComps['neighborhood']
+            location.stateProvince = addrComps['administrative_area_level_1']
+            location.postalCode = addrComps['postal_code']
+            location.country = addrComps['country']
+            locations << location
          }
-         def geometry = [  
-            latitude: Double.parseDouble(result.geometry?.location?.lat?.toString() ?: '0'),
-            longitude: Double.parseDouble(result.geometry?.location?.lng?.toString() ?: '0') 
-         ]
-
-         if (geometry.latitude == 0 && geometry.longitude == 0) {
-            continue
-         }
-
-         def street = addrMap['street_number']
-         def route = addrMap['route']
-         def loc = [:]
-         
-         if (addrMap['name']) {
-            loc['name'] = addrMap['name'].substring(2)
-         }
-         loc['address'] = "${street} ${route}".replace("null", "").trim()
-         if (addrMap['state']) {
-            loc['stateProvince'] = addrMap['state']
-         }
-         if (addrMap['postal_code']) {
-            loc['postalCode'] = addrMap['postal_code']
-         }
-         def city = addrMap['postal_town'] ?: 
-                    addrMap['administrative_area_level_2'] ?: 
-                    addrMap['locality'] ?: 
-                    addrMap['neighborhood'] ?: null
-         if (city) {
-            loc['city'] = city
-         }
-         if (addrMap['country']) {
-            loc['country'] = addrMap['country']
-         }
-         loc['latitude'] = geometry.latitude
-         loc['longitude'] = geometry.longitude
-         
-         locations << loc
       }
+
       return locations
    }
    
-   /**
-    * Get XML from the String address
-    * @param address The address to geocode.
-    * @return Returns the xml from the address.
-    */
-   protected GPathResult getXmlFromStringAddress(String address) {
-      def encodedString = URLEncoder.encode(address, encoding)
-      def googleGeocoderUrl = getUrl()
-      def url = new URL("${googleGeocoderUrl}&address=${encodedString}")
-
-      return getXmlFromUrl(url)
-   }
-   
-   /**
-    * Gets the XML for a latitude and longitude.
-    * @param latitude The latitude.
-    * @param longitude The longitude.
-    * @return Returns the XML for the latitude/longitude.
-    */
-   protected GPathResult getXmlFromLatLng(double latitude, double longitude) {
-      def encodedString = URLEncoder.encode("${latitude},${longitude}", encoding)
-      def googleGeocoderUrl = getUrl()
-      
-      def url = new URL("${googleGeocoderUrl}&latlng=${encodedString}")
-      
-      return getXmlFromUrl(url)
-   }
-
-   /**
-    * Converts the provided Location from Google into a sing string.
-    * @param location The location.
-    * @return Returns a string.
-    */
-   protected String getStringFromLocation(def location) {
-      def str = "${location.address ?: ''}, ${location.city ?: ''}, ${location.state?.code ?: ''} ${location.zip ?: ''}"
-      str = str.trim().replaceAll("\\s+", " ")
-      while (str =~ /^, /) {
-         str = str.substring(2)
-      }
-      return str.replaceAll('\\s+,', ',')
-   }
-
-
-   /**
-    * Gets the XML from the provided URL.
-    * @param url The URL.
-    * @return Returns the XML from the provided URL.
-    */
-   protected GPathResult getXmlFromUrl(URL url) {
-      def stream = url.openStream()
-      def xml = new XmlSlurper().parse(stream)
-
-      IOUtils.closeQuietly(stream)
-
-      return xml
-   }
-
-   /**
-    * Gets the Google geocoder URL.
-    * @return Returns the URL of the google GEOCoder.
-    */
-   protected String getUrl() {
-      return grailsApplication.config.geomapping.geocoder.url ?: 'http://maps.googleapis.com/maps/api/geocode/xml?sensor=false'
-   }
-   
-   private String getType(def addrComp) {
-      def type = ''
-      for (int i in 0..addrComp.type.size()-1) {
-         def theType = addrComp.type[i].toString()
-         if (theType) {
-            if (theType == 'establishment' || theType == 'point_of_interest') {
-               return 'name'
-            } else if (theType != 'political') {
-               type = theType
+   private def breakDownAddress(addrComps) {
+      def addr = [:]
+      addrComps.each { comp ->
+         comp.types.each { type ->
+            if (type != 'political') {
+               addr[type] = comp.shortName
             }
          }
       }
-      return type
+      return addr
    }
 }
