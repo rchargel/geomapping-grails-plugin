@@ -1,5 +1,6 @@
 Geomapping Plugin for Grails
 ============================
+* auto-gen TOC:
 {:toc}
 
 ## Description
