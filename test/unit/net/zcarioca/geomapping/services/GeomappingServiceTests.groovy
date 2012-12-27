@@ -33,7 +33,7 @@ class GeomappingServiceTests {
    @Test
    void testBuildBoundingBox() {
       LatLng newYork = new LatLng(40.714353, -74.005974)
-      BoundingBox bb = geomappingService.buildBoundaryBox(newYork.latitude, newYork.longitude, 6);
+      BoundingBox bb = geomappingService.buildBoundingBox(newYork.latitude, newYork.longitude, 6);
       assertTrue(bb.containsCoordinate(newYork))
       assertEquals(6, geomappingService.calculateDistance(newYork.latitude, newYork.longitude, bb.northWest.latitude, newYork.longitude), 0.1);
       assertEquals(6, geomappingService.calculateDistance(newYork.latitude, newYork.longitude, bb.southEast.latitude, newYork.longitude), 0.1);
