@@ -1,6 +1,6 @@
 Geomapping Plugin for Grails
 ============================
-* [Description](#Description)
+* [Description](#description)
 * Configuration
 * Geomapping Service
 * * buildBoundingBox
