@@ -66,23 +66,24 @@ locations.each { location ->
 ### getLocationsFromAddress
 Similar to the previous method, except that the search parameter is an address or famous landmark.
 
-    def locations = geomappingService.getLocationsFromAddress("Eiffel Tower, Paris")
-    locations.each { location ->
-        println location.formattedAddress
-        println "    ${location.name}" // Eiffel Town
-        println "    ${location.city}" // Paris
-        println "    ${location.country}" // FR
-        ... 
-        println "    ${location.location.latitude} / ${location.location.longitude}"
-    }
-
+```groovy
+def locations = geomappingService.getLocationsFromAddress("Eiffel Tower, Paris")
+locations.each { location ->
+   println location.formattedAddress
+   println "    ${location.name}" // Eiffel Town
+   println "    ${location.city}" // Paris
+   println "    ${location.country}" // FR
+   println "    ${location.location.latitude} / ${location.location.longitude}"
+}
+```
 ### toMiles / toKilometers
 Very simply converts between miles and kilometers.
 
-    def kilometers = geomappingService.toKilometers(1)
-    def miles = geomappingService.toMiles(1)
-    println kilometers // ~ 1.6
-    println miles // ~ 0.6
-
+```groovy
+def kilometers = geomappingService.toKilometers(1)
+def miles = geomappingService.toMiles(1)
+println kilometers // ~ 1.6
+println miles // ~ 0.6
+```
 ***
 ## Tag Library
