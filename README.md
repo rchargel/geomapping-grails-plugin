@@ -21,7 +21,7 @@ The Geomapping Service provides an API for geocoding and reverse geocoding.  It 
 ### buildBoundingBox
 Creates a bounding box encompassing a specified radius in kilometers around a latitude and longitude.  The bounding box that is created errors on the side of being too large.  The best use of this is to quickly search for items whose coordinates fall within the bounding box, then filter out the rest using the calcuateDistance method.
 
-```grails
+```groovy
 def nyLat = 40.7482845
 def nyLng = -73.9855692
 def radiusKilometers = 2.5
