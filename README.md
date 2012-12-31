@@ -1,14 +1,9 @@
 Geomapping Plugin for Grails
 ============================
 * [Description](#description)
-* Configuration
-* Geomapping Service
-* * buildBoundingBox
-* * calculateDistance
-* * getCoordinatesFromIP
-* * getLocationsFromCoordinates
-* * getLocationsFromAddress
-* Tag Library
+* [Configuration](#configuration)
+* [Geomapping Service](#geomapping-service)
+* [Tag Library](#tag-library)
 
 ## Description
 The geomapping plugin for grails provides both a geomappingService and a tag library to your application to simplify the development of applications using google maps api.
@@ -26,12 +21,13 @@ The Geomapping Service provides an API for geocoding and reverse geocoding.  It 
 ### buildBoundingBox
 Creates a bounding box encompassing a specified radius in kilometers around a latitude and longitude.  The bounding box that is created errors on the side of being too large.  The best use of this is to quickly search for items whose coordinates fall within the bounding box, then filter out the rest using the calcuateDistance method.
 
-    def nyLat = 40.7482845
-    def nyLng = -73.9855692
-    def radiusKilometers = 2.5
-    def bb = geomappingService.buildBoundingBox(nyLat, nyLng, radiusKilometers)
-    assertTrue(bb.containsCoordinate(40.760439, -73.979336))
-
+```grails
+def nyLat = 40.7482845
+def nyLng = -73.9855692
+def radiusKilometers = 2.5
+def bb = geomappingService.buildBoundingBox(nyLat, nyLng, radiusKilometers)
+assertTrue(bb.containsCoordinate(40.760439, -73.979336))
+```
 ### calculateDistance
 Calculates the distance in kilometers between two points.
 
