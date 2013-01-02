@@ -14,6 +14,53 @@ There is really only one configuration parameter required for the geomapping plu
 
 *geomapping.apiKey=YOUR_GOOGLE_API_KEY*
 
+The following other configuration parameters are also available:
+
+<table>
+   <tr>
+      <th>Parameter</th>
+      <th>Accepted Values</th>
+      <th>Default Value</th>
+      <th>Description</th>
+   </tr>
+   <tr>
+      <td>geomapping.control.pan</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the pan control is displayed in the map</td>
+   </tr>
+   <tr>
+      <td>geomapping.control.zoom</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the zoom control is displayed in the map</td>
+   </tr>
+   <tr>
+      <td>geomapping.control.mapType</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the map type control is displayed in the map</td>
+   </tr>
+   <tr>
+      <td>geomapping.control.scale</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the scale control is displayed in the map</td>
+   </tr>
+   <tr>
+      <td>geomapping.control.streetView</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the street view control is displayed in the map</td>
+   </tr>
+   <tr>
+      <td>geomapping.control.overviewMap</td>
+      <td>true / false</td>
+      <td>true</td>
+      <td>Determines whether the overview control is displayed in the map</td>
+   </tr>
+</table>
+
 ***
 ## Geomapping Service
 The Geomapping Service provides an API for geocoding and reverse geocoding.  It also provides an API for querying the location of your users by their IP Address.
