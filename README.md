@@ -4,6 +4,7 @@ Geomapping Plugin for Grails
 * [Configuration](#configuration)
 * [Geomapping Service](#geomapping-service)
 * [Tag Library](#tag-library)
+* [License](#license)
 
 ## Description
 The geomapping plugin for grails provides both a geomappingService and a tag library to your application to simplify the development of applications using google maps api.
@@ -134,3 +135,17 @@ println miles // ~ 0.6
 ```
 ***
 ## Tag Library
+
+## License
+
+Distributed under GPL 3 license.
+http://www.gnu.org/licenses/gpl-3.0.html
+
+<pre>
+  _________           _                              _   
+ |__  / ___|__ _ _ __(_) ___   ___ __ _   _ __   ___| |_ 
+   / / |   / _` | '__| |/ _ \ / __/ _` | | '_ \ / _ \ __|
+  / /| |__| (_| | |  | | (_) | (_| (_| |_| | | |  __/ |_ 
+ /____\____\__,_|_|  |_|\___/ \___\__,_(_)_| |_|\___|\__|
+ 
+</pre>
