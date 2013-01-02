@@ -10,7 +10,7 @@ The geomapping plugin for grails provides both a geomappingService and a tag lib
 
 ***
 ## Configuration
-There is really only one configuration parameter for the geomapping plugin
+There is really only one configuration parameter required for the geomapping plugin
 
 *geomapping.apiKey=YOUR_GOOGLE_API_KEY*
 
