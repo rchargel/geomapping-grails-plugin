@@ -1,5 +1,7 @@
 package net.zcarioca.geomapping.taglib
 
+import org.apache.commons.lang.StringUtils;
+
 import net.zcarioca.geomapper.LatLng;
 
 class GeomappingTagLib {
@@ -7,6 +9,8 @@ class GeomappingTagLib {
    
    def grailsApplication
    def geomappingService
+   
+   private static final MAP_TYPES = ['ROADMAP', 'SATELLITE', 'HYBRID', 'TERRAIN']
 
    /**
     * Initializes the google maps api.
@@ -43,6 +47,7 @@ class GeomappingTagLib {
     * @attr longitude The initial longitude, defaults to user's location if available.
     * @attr zoom The initial zoom level, defaults to 12.
     * @attr type One of 'ROADMAP', 'SATELLITE', 'HYBRID', 'TERRAIN'.  Defaults to ROADMAP.
+    * @attr args Overrides other arguments. Allows the user to build up a parameter map in the controller.
     */
    def map = { attrs ->
       def apiKey = grailsApplication?.config?.geomapping?.apiKey
@@ -50,37 +55,29 @@ class GeomappingTagLib {
          throwTagError("The 'geomapping.apiKey' configuration should be added to your project's Config.groovy.")
       }
       
-      def mapId = 'map_canvas'
-      if (attrs['id']) {
-         mapId = attrs.remove('id')
+      def args = attrs.args
+      def mapId = args?.id ?: attrs.id ?: 'map_canvas'
+      def type = args?.type?.toUpperCase() ?: attrs.type?.toUpperCase() ?: "ROADMAP"
+      if (!MAP_TYPES.contains(type)) {
+         throwTagError("Error in tag [geomapping:map] type must be one of: ${MAP_TYPES}")
       }
+      def zoom = args?.zoom ?: attrs.zoom ?: 12
       
-      def type = "ROADMAP"
-      if (attrs.type) {
-         type = attrs.remove('type')
-      }
-      def zoom = "12"
-      if (attrs.zoom) {
-         zoom = attrs.remove('zoom')
-      }
-      def startLat = null
-      def startLng = null
-      if (attrs.latitude && attrs.longitude) {
-         startLat = attrs.remove('latitude')
-         startLng = attrs.remove('longitude')
-      } else {
+      def startLat = args?.latitude ?: attrs.latitude ?: null
+      def startLng = args?.longitude ?: attrs.longitude ?: null
+      if (startLat == null || startLng == null) {
          LatLng pos = geomappingService.getCoordinatesFromIP(request.remoteAddr)
          if (pos) {
             startLat = pos.latitude
             startLng = pos.longitude
          }
       }
-      def panControl = grailsApplication?.config?.geomapping?.features?.pan ?: "true"
-      def zoomControl = grailsApplication?.config?.geomapping?.features?.zoom ?: "true"
-      def mapTypeControl = grailsApplication?.config?.geomapping?.features?.mapType ?: "true"
-      def scaleControl = grailsApplication?.config?.geomapping?.features?.scale ?: "true"
-      def streetViewControl = grailsApplication?.config?.geomapping?.features?.streetView ?: "true"
-      def overviewMapControl = grailsApplication?.config?.geomapping?.features?.overviewMap ?: "true"
+      def panControl = getControl(args, 'pan')
+      def zoomControl = getControl(args, 'zoom')
+      def mapTypeControl = getControl(args, 'mapType')
+      def scaleControl = getControl(args, 'scale')
+      def streetViewControl = getControl(args, 'streetView')
+      def overviewMapControl = getControl(args, 'overviewMap')
       
       out << "<div id=\"${mapId}\""
       outputAttrs(attrs, out)
@@ -96,20 +93,41 @@ class GeomappingTagLib {
       out << "   streetViewControl:  ${streetViewControl},\n"
       out << "   overviewMapControl: ${overviewMapControl},\n"
       if (startLat && startLng) {
-         out << "   center:             new google.maps.LatLng(${startLat},${strtLng}),\n"
+         out << "   center:             new google.maps.LatLng(${startLat},${startLng}),\n"
       }
       out << "   mapTypeId:          google.maps.MapTypeId.${type}\n"
       out << '};\n'
       out << 'var map = new google.maps.Map(mapCanvas, mapOptions);\n'
-      if (attrs.callback) {
-         out << "${attrs.callback}(map);"
+      def callback = args?.callback ?: attrs.callback ?: null
+      if (callback) {
+         out << "${callback}(map);\n"
       }
       out << '</script>'
    }
    
+   private String getControl(def args, def control) {
+      def value = null
+      if (args) {
+         def controlKey = "${control}Control"
+         if (args[controlKey] != null) {
+            value = args[controlKey].toString()
+         }
+      }
+      if (!value) {
+         value = grailsApplication?.config?.geomapping?.control?."${control}"?.toString()
+         if (value != 'true' && value != 'false') {
+            value = null
+         }
+      }
+      return value ?: 'true'
+   }
+   
    private def outputAttrs(attrs, writer) {
+      def excluded = ['id','type','zoom','latitude', 'longitude', 'args', 'callback']
       attrs.each { key, value ->
-         writer << " ${key}=\"${value}\""
+         if (!excluded.contains(key)) {
+            writer << " ${key}=\"${value}\""
+         }
       }
    }
 }
