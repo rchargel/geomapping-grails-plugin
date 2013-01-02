@@ -4,6 +4,7 @@ Geomapping Plugin for Grails
 * [Configuration](#configuration)
 * [Geomapping Service](#geomapping-service)
 * [Tag Library](#tag-library)
+* [Road Map](#road-map)
 * [License](#license)
 
 ## Description
@@ -136,6 +137,44 @@ println miles // ~ 0.6
 ***
 ## Tag Library
 
+The tag library provided with this plugin contains two tags:
+``<geomapping:init />`` and ``<geomapping:map />``.
+
+### Tag - geomapping:init
+
+The ``<geomapping:init />`` initializes [Google Maps Javascript API v3](https://developers.google.com/maps/documentation/javascript/reference).
+This tag should be placed in the ``head`` of your HTML document, and provides the following simple parameters:
+
+<table>
+   <tr>
+      <th>Parameter</th><th>Accepted Values</th><th>Default Value</th><th>Description</th>
+   </tr>
+   <tr>
+      <td>sensor</td>
+      <td>true / false</td>
+      <td>false</td>
+      <td>Determines whether this application uses a sensor to determine the user's location. Most useful for mobile applications.</td>
+   </tr>
+   <tr>
+      <td>callback</td>
+      <td>javascript method name</td>
+      <td>null</td>
+      <td>Callback method which is executed once the google maps api is loaded.<td>
+   </tr>
+</table>
+
+### Tag - geomapping:map
+
+The ``<geomapping:map />`` tag is used to render the actual Google map.  This should be
+placed anywhere you would like the actual map to be rendered.
+
+***
+## Road Map
+
+In the version of this plugin I would like to be able to specify different map APIs.  For instance,
+it would be nice to be able to easily switch between Bing, Google, and Ovi maps.
+
+***
 ## License
 
 Distributed under GPL 3 license.
