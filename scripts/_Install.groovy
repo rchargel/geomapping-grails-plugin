@@ -8,3 +8,22 @@
 //
 //    ant.mkdir(dir:"${basedir}/grails-app/jobs")
 //
+
+updateConfig()
+
+private void updateConfig() {
+   def configFile = new File(basedir, 'grails-app/conf/Config.groovy')
+   if (configFile.exists() && configFile.text.indexOf("geomapping") == -1) {
+      configFile.withWriterAppend { file ->
+         file.writeLine '\n// Added by the geomapping plugin:'
+         file.writeLine 'geomapping.apiKey="" // TODO add api key'
+      }
+      println '''
+************************************************************
+* Your grails-app/conf/Config.groovy has been updated with *
+* default configurations of geomapping plugin;             *
+* please set your API Key.                                 *
+************************************************************
+'''
+   }
+}
