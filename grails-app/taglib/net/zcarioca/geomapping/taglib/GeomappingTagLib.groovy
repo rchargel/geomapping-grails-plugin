@@ -11,55 +11,40 @@ class GeomappingTagLib {
    def geomappingService
    
    private static final MAP_TYPES = ['ROADMAP', 'SATELLITE', 'HYBRID', 'TERRAIN']
-
-   /**
-    * Initializes the google maps api.
-    * 
-    * @emptyTag
-    * 
-    * @attr sensor Set to true or false. Determines whether this application uses a sensor
-    *              to determine the user's location. Defaults to false.
-    * 
-    * @attr callback The callback to call when loaded.  Not required.
-    */
-   def init = { attrs ->
-      def apiKey = grailsApplication?.config?.geomapping?.apiKey
-      def sensor = attrs.sensor ?: "false"
-      
-      if (!apiKey) {
-         throwTagError("The 'geomapping.apiKey' configuration should be added to your project's Config.groovy.")
-      }
-      def url = "https://maps.googleapis.com/maps/api/js?key=${apiKey}&sensor=${sensor}"
-      if (attrs.callback) {
-         url = "${url}&callback=${attrs.callback}"
-      }
-      out << "<script type=\"text/javascript\" src=\"${url}\"></script>"
-   }
    
    /**
-    * Adds the google map to your page.
+    * Initializes the map with options in place.
+    * The body can be a javascript callback method.
     * 
-    * @emptyTag
+    * @attr id REQUIRED The element ID of the map canvas.
     * 
-    * @attr id The element ID of the map canvas. Defaults to 'map_canvas'.
-    * @attr callback The callback method to run when the map is loaded.  Not required.
     * @attr latitude The initial latitude, defaults to user's location if available.
+    * 
     * @attr longitude The initial longitude, defaults to user's location if available.
+    * 
     * @attr zoom The initial zoom level, defaults to 12.
-    * @attr type One of 'ROADMAP', 'SATELLITE', 'HYBRID', 'TERRAIN'.  Defaults to ROADMAP.
-    * @attr args Overrides other arguments. Allows the user to build up a parameter map in the controller.
+    * 
+    * @attr type One of 'ROADMAP', 'SATELLITE', 'HYBRID', 'TERRAIN'.  
+    *            Defaults to ROADMAP.
+    * 
+    * @attr args Overrides other arguments. Allows the user to build up a parameter 
+    *            map in the controller.
     */
-   def map = { attrs ->
+   def initMap = { attrs, body ->
+      def args = attrs.args
+      
       def apiKey = grailsApplication?.config?.geomapping?.apiKey
       if (!apiKey) {
          throwTagError("The 'geomapping.apiKey' configuration should be added to your project's Config.groovy.")
       }
       
-      def args = attrs.args
-      def mapId = args?.id ?: attrs.id ?: 'map_canvas'
+      def mapId = args?.id ?: attrs.id ?: null
+      if (!mapId) {
+         throwTagError("Error in tag [geomapping:initMap] - attribute ID must be set.")
+      }
       def type = args?.type?.toUpperCase() ?: attrs.type?.toUpperCase() ?: "ROADMAP"
       if (!MAP_TYPES.contains(type)) {
-         throwTagError("Error in tag [geomapping:map] type must be one of: ${MAP_TYPES}")
+         throwTagError("Error in tag [geomapping:initMap] - type must be one of: ${MAP_TYPES}")
       }
       def zoom = args?.zoom ?: attrs.zoom ?: 12
       
@@ -79,29 +64,31 @@ class GeomappingTagLib {
       def streetViewControl = getControl(args, 'streetView')
       def overviewMapControl = getControl(args, 'overviewMap')
       
-      out << "<div id=\"${mapId}\""
-      outputAttrs(attrs, out)
-      out << '></div>\n'
+      def writer = new StringWriter()
+      writer << body()
+      def callback = (writer.toString().trim() =~ /(?m)(^\s+)|(\s+$)/).replaceAll('')
+      callback = callback.replaceAll("\n", "")
+      
       out << '<script type="text/javascript">\n'
-      out << "var mapCanvas = document.getElementById('${mapId}');\n"
-      out << 'var mapOptions = {\n'
-      out << "   zoom:               ${zoom},\n"
-      out << "   panControl:         ${panControl},\n"
-      out << "   zoomControl:        ${zoomControl},\n"
-      out << "   mapTypeControl:     ${mapTypeControl},\n"
-      out << "   scaleControl:       ${scaleControl},\n"
-      out << "   streetViewControl:  ${streetViewControl},\n"
-      out << "   overviewMapControl: ${overviewMapControl},\n"
+      out << "var geomapOptions = {\n"
+      out << "   mapCanvas  : '${mapId}',\n"
+      if (StringUtils.isNotBlank(callback)) {
+         out << "   callback   : ${callback},\n"
+      }
+      out << '   mapOptions : {\n'
+      out << "      zoom:               ${zoom},\n"
+      out << "      panControl:         ${panControl},\n"
+      out << "      zoomControl:        ${zoomControl},\n"
+      out << "      mapTypeControl:     ${mapTypeControl},\n"
+      out << "      scaleControl:       ${scaleControl},\n"
+      out << "      streetViewControl:  ${streetViewControl},\n"
+      out << "      overviewMapControl: ${overviewMapControl},\n"
       if (startLat && startLng) {
-         out << "   center:             new google.maps.LatLng(${startLat},${startLng}),\n"
+         out << "      center:             [${startLat}, ${startLng}],\n"
       }
-      out << "   mapTypeId:          google.maps.MapTypeId.${type}\n"
+      out << "      mapType:            '${type}'\n"
+      out << '   }\n'
       out << '};\n'
-      out << 'var map = new google.maps.Map(mapCanvas, mapOptions);\n'
-      def callback = args?.callback ?: attrs.callback ?: null
-      if (callback) {
-         out << "${callback}(map);\n"
-      }
       out << '</script>'
    }
    
@@ -122,12 +109,4 @@ class GeomappingTagLib {
       return value ?: 'true'
    }
    
-   private def outputAttrs(attrs, writer) {
-      def excluded = ['id','type','zoom','latitude', 'longitude', 'args', 'callback']
-      attrs.each { key, value ->
-         if (!excluded.contains(key)) {
-            writer << " ${key}=\"${value}\""
-         }
-      }
-   }
 }

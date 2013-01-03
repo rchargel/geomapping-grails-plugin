@@ -26,7 +26,7 @@ class GeomappingTagLibTests {
       config.geomapping.apiKey = "1234"
       
       def geomappingServiceMock = mockFor(GeomappingService)
-      geomappingServiceMock.demand.getCoordinatesFromIP(1..1) { String ipAddress ->
+      geomappingServiceMock.demand.getCoordinatesFromIP(1..3) { String ipAddress ->
          return new LatLng(42.2, -70.5)
       }
       GeomappingTagLib.metaClass.geomappingService = geomappingServiceMock.createMock()
@@ -38,160 +38,185 @@ class GeomappingTagLibTests {
    }
 
    @Test
-   void testInit() {
-      assertOutputEquals('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=1234&sensor=false"></script>', '<geomapping:init/>')
+   void testInitMap() {
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   mapOptions : {
+      zoom:               12,
+      panControl:         true,
+      zoomControl:        true,
+      mapTypeControl:     true,
+      scaleControl:       true,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [42.2, -70.5],
+      mapType:            'ROADMAP'
+   }
+};
+</script>'''
+      def tag = '<geomapping:initMap id="map_canvas"/>'
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
    }
    
-   @Test(expected = GrailsTagException.class)
-   void testInitWithError() {
-      config.geomapping.apiKey = null
-      assertOutputEquals("doesn't matter", '<geomapping:init/>')
+   @Test
+   void testInitMapWithLatLng() {
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   mapOptions : {
+      zoom:               12,
+      panControl:         true,
+      zoomControl:        true,
+      mapTypeControl:     true,
+      scaleControl:       true,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [40, -70],
+      mapType:            'ROADMAP'
+   }
+};
+</script>'''
+      def tag = '<geomapping:initMap id="map_canvas" latitude="40" longitude="-70"/>'
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
    }
 
    @Test
-   void testInitWithSensor() {
-      assertOutputEquals('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=1234&sensor=true"></script>', '<geomapping:init sensor="true"/>')
+   void testInitMapWithProps() {
+      config.geomapping.control.pan=false
+      config.geomapping.control.scale="false"
+      
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   mapOptions : {
+      zoom:               12,
+      panControl:         false,
+      zoomControl:        true,
+      mapTypeControl:     true,
+      scaleControl:       false,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [42.2, -70.5],
+      mapType:            'ROADMAP'
+   }
+};
+</script>'''
+      def tag = '<geomapping:initMap id="map_canvas"/>'
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
+      config.geomapping.control.pan=null
+      config.geomapping.control.scale=null
+   }
+   
+   @Test
+   void testInitMapWithBody() {
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   callback   : function (mapObj) {alert('Map is loaded');},
+   mapOptions : {
+      zoom:               12,
+      panControl:         true,
+      zoomControl:        true,
+      mapTypeControl:     true,
+      scaleControl:       true,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [42.2, -70.5],
+      mapType:            'ROADMAP'
+   }
+};
+</script>'''
+      def tag = '''<geomapping:initMap id="map_canvas">
+function (mapObj) {
+   alert('Map is loaded');
+}
+</geomapping:initMap>'''
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
    }
 
    @Test
-   void testInitWithCallback() {
-      assertOutputEquals('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=1234&sensor=true&callback=runme"></script>', '<geomapping:init sensor="true" callback="runme"/>')
+   void testInitMapWithType() {
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   mapOptions : {
+      zoom:               12,
+      panControl:         true,
+      zoomControl:        true,
+      mapTypeControl:     true,
+      scaleControl:       true,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [42.2, -70.5],
+      mapType:            'SATELLITE'
    }
-   
-   @Test
-   void testMap() {
-      def expectedOutput = '''<div id="map_canvas"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('map_canvas');
-var mapOptions = {
-   zoom:               12,
-   panControl:         true,
-   zoomControl:        true,
-   mapTypeControl:     true,
-   scaleControl:       true,
-   streetViewControl:  true,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(40,-72),
-   mapTypeId:          google.maps.MapTypeId.ROADMAP
 };
-var map = new google.maps.Map(mapCanvas, mapOptions);
 </script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map latitude="40" longitude="-72"/>')
+      def tag = '<geomapping:initMap id="map_canvas" type="satellite"/>'
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
    }
-   
+
    @Test
-   void testMapNoLatLng() {
-      def expectedOutput = '''<div id="map_canvas"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('map_canvas');
-var mapOptions = {
-   zoom:               12,
-   panControl:         true,
-   zoomControl:        true,
-   mapTypeControl:     true,
-   scaleControl:       true,
-   streetViewControl:  true,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(42.2,-70.5),
-   mapTypeId:          google.maps.MapTypeId.ROADMAP
-};
-var map = new google.maps.Map(mapCanvas, mapOptions);
-</script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map />')
+   void testInitMapWithArgs() {
+      def expected = '''<script type="text/javascript">
+var geomapOptions = {
+   mapCanvas  : 'map_canvas',
+   mapOptions : {
+      zoom:               7,
+      panControl:         true,
+      zoomControl:        false,
+      mapTypeControl:     true,
+      scaleControl:       true,
+      streetViewControl:  true,
+      overviewMapControl: true,
+      center:             [40, -70],
+      mapType:            'TERRAIN'
    }
-   
-   @Test
-   void testMapDifferentId() {
-      def expectedOutput = '''<div id="test_different_id" title="My Map" class="myMapClass"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('test_different_id');
-var mapOptions = {
-   zoom:               12,
-   panControl:         true,
-   zoomControl:        true,
-   mapTypeControl:     true,
-   scaleControl:       true,
-   streetViewControl:  true,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(40,-72),
-   mapTypeId:          google.maps.MapTypeId.ROADMAP
 };
-var map = new google.maps.Map(mapCanvas, mapOptions);
 </script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map id="test_different_id" title="My Map" class="myMapClass" latitude="40" longitude="-72"/>')
-   }
-   
-   @Test
-   void testMapSatellite() {
-      def expectedOutput = '''<div id="map_canvas"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('map_canvas');
-var mapOptions = {
-   zoom:               12,
-   panControl:         true,
-   zoomControl:        true,
-   mapTypeControl:     true,
-   scaleControl:       true,
-   streetViewControl:  true,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(40,-72),
-   mapTypeId:          google.maps.MapTypeId.SATELLITE
-};
-var map = new google.maps.Map(mapCanvas, mapOptions);
-</script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map latitude="40" longitude="-72" type="satellite"/>')
-   }
-   
-   @Test
-   void testMapChangeControlParameters() {
-      config.geomapping.control.pan = "false"
-      config.geomapping.control.mapType = false
-      def expectedOutput = '''<div id="map_canvas"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('map_canvas');
-var mapOptions = {
-   zoom:               12,
-   panControl:         false,
-   zoomControl:        true,
-   mapTypeControl:     false,
-   scaleControl:       true,
-   streetViewControl:  true,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(40,-72),
-   mapTypeId:          google.maps.MapTypeId.ROADMAP
-};
-var map = new google.maps.Map(mapCanvas, mapOptions);
-</script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map latitude="40" longitude="-72"/>')
-      config.geomapping.control.pan = null
-      config.geomapping.control.mapType = null
+      def tag = '<geomapping:initMap id="map_canvas" args="${[zoom: 7, latitude: 40, longitude: -70, zoomControl: false, type: "terrain"]}"/>'
+      def output = applyTemplate("${tag}")
+      println "input:\n${tag}\n"
+      println "output:\n${output}"
+      assertEquals(expected, output)
    }
    
    @Test(expected = GrailsTagException.class)
-   void testMapBadType() {
-      assertOutputEquals('does not matter', '<geomapping:map latitude="40" longitude="-72" type="awesome_map"/>')
+   void testInitMapNoId() {
+      def tag = '<geomapping:initMap />'
+      println "input:\n${tag}"
+      applyTemplate("${tag}")
    }
    
-   @Test
-   void testMapArgs() {
-      def expectedOutput = '''<div id="map_canvas"></div>
-<script type="text/javascript">
-var mapCanvas = document.getElementById('map_canvas');
-var mapOptions = {
-   zoom:               7,
-   panControl:         true,
-   zoomControl:        false,
-   mapTypeControl:     true,
-   scaleControl:       true,
-   streetViewControl:  false,
-   overviewMapControl: true,
-   center:             new google.maps.LatLng(-50,25),
-   mapTypeId:          google.maps.MapTypeId.TERRAIN
-};
-var map = new google.maps.Map(mapCanvas, mapOptions);
-myCallback(map);
-</script>'''
-      assertOutputEquals(expectedOutput, '<geomapping:map latitude="40" longitude="-72" args="${[zoom:7,type:"terrain",callback:"myCallback",zoomControl:"false",streetViewControl:false,latitude:-50,longitude:25]}"/>')
+   @Test(expected = GrailsTagException.class)
+   void testInitMapBadType() {
+      def tag = '<geomapping:initMap id="map_canvas" type="cool_map" />'
+      println "input:\n${tag}"
+      applyTemplate("${tag}")
+   }
+   
+   @Test(expected = GrailsTagException.class)
+   void testInitMapNoApiKey() {
+      config.geomapping.apiKey=null
+      def tag = '<geomapping:initMap id="map_canvas" />'
+      println "input:\n${tag}"
+      applyTemplate("${tag}")
    }
    
 }
